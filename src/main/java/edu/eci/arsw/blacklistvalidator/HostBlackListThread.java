@@ -5,8 +5,10 @@
 package edu.eci.arsw.blacklistvalidator;
 
 import edu.eci.arsw.spamkeywordsdatasource.HostBlacklistsDataSourceFacade;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import edu.eci.arsw.blacklistvalidator.HostBlackListsValidator.*;
 
 /**
  *
@@ -18,9 +20,10 @@ public class HostBlackListThread extends Thread {
     private final int end;
     private final String address;
     private final HostBlacklistsDataSourceFacade skds;
-    private final List<Integer> blackListOccurrences = new LinkedList<>();
+    private static final List<Integer> blackListOccurrences = Collections.synchronizedList(new LinkedList<>());
     private int checkedListsCount;
     private int ocurrencesCount;
+    private static final int BLACK_LIST_ALARM_COUNT = HostBlackListsValidator.getBlackListAlarmCount();
     
     public HostBlackListThread(int start, int end, String address, HostBlacklistsDataSourceFacade skds) {
         this.start = start;
@@ -33,11 +36,14 @@ public class HostBlackListThread extends Thread {
     
     @Override
     public void run(){
-        for(int i = start; i < end; i++){
+        for(int i = start; i < end && !enoughOcurrences(); i++){
             checkedListsCount++;
             if (skds.isInBlackListServer(i, address)){
-                blackListOccurrences.add(i);
-                ocurrencesCount++;
+                synchronized(blackListOccurrences){
+                    blackListOccurrences.add(i);
+                    ocurrencesCount++;
+                }
+                
             }
         }
     }
@@ -52,6 +58,10 @@ public class HostBlackListThread extends Thread {
     
     public List<Integer> getBlackListOccurrences(){
         return blackListOccurrences;
+    }
+    
+    public boolean enoughOcurrences(){
+        return (blackListOccurrences.size() >= BLACK_LIST_ALARM_COUNT);
     }
     
 }
