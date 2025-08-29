@@ -12,7 +12,7 @@ import java.util.logging.Logger;
 
 /**
  *
- * @author hcadavid
+ * @author hcadavi
  */
 public class Producer extends Thread {
 
