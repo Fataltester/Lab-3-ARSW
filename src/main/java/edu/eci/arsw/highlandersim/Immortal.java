@@ -17,6 +17,9 @@ public class Immortal extends Thread {
 
     private final Random r = new Random(System.currentTimeMillis());
 
+    private volatile boolean paused = false;
+    
+    private final Object pauseLock = new Object();
 
     public Immortal(String name, List<Immortal> immortalsPopulation, int health, int defaultDamageValue, ImmortalUpdateReportCallback ucb) {
         super(name);
@@ -28,8 +31,17 @@ public class Immortal extends Thread {
     }
 
     public void run() {
-
         while (true) {
+                synchronized (pauseLock) {
+                    while (paused) {
+                        try {
+                            pauseLock.wait();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+
             Immortal im;
 
             int myIndex = immortalsPopulation.indexOf(this);
@@ -56,15 +68,38 @@ public class Immortal extends Thread {
     }
 
     public void fight(Immortal i2) {
-
-        if (i2.getHealth() > 0) {
-            i2.changeHealth(i2.getHealth() - defaultDamageValue);
-            this.health += defaultDamageValue;
-            updateCallback.processReport("Fight: " + this + " vs " + i2+"\n");
-        } else {
-            updateCallback.processReport(this + " says:" + i2 + " is already dead!\n");
+        Immortal first = this;
+        Immortal second = i2;
+        // Asegurar orden consistente de bloqueo
+        if (first.getName().compareTo(second.getName()) > 0) {
+            first = i2;
+            second = this;
         }
-
+        synchronized(first) {
+            synchronized (second) {
+                if (i2.getHealth() > 0) {
+                int damage = Math.min(defaultDamageValue, i2.getHealth());
+                i2.changeHealth(i2.getHealth() - damage);
+                this.changeHealth(getHealth() + damage);
+                    updateCallback.processReport("Fight: " + this + " vs " + i2+"\n");
+                } else {
+                    updateCallback.processReport(this + " says:" + i2 + " is already dead!\n");
+                }
+            }
+        }
+    }
+    
+    public void pauseInmortal(){
+        synchronized (pauseLock) {
+            paused = true;
+        }
+    }
+    
+    public void resumeImmortal(){
+        synchronized (pauseLock) {
+            paused = false;
+            pauseLock.notifyAll();
+        }
     }
 
     public void changeHealth(int v) {
