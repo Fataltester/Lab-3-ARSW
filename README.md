@@ -1,18 +1,33 @@
+### Escuela Colombiana de Ingeniería
+### Arquitecturas de Software - ARSW 2025-2
+### Ejercicio – programación concurrente, condiciones de carrera y sincronización de hilos. EJERCICIO INDIVIDUAL O EN PAREJAS.
 
-## Escuela Colombiana de Ingeniería
-### Arquitecturas de Software – ARSW
-
-
-#### Ejercicio – programación concurrente, condiciones de carrera y sincronización de hilos. EJERCICIO INDIVIDUAL O EN PAREJAS.
-
-##### Parte I – Antes de terminar la clase.
+## Integrantes:
+### Juan David Martínez Mendez
+### Santiago Gualdrón Rincón
+## Parte I – Antes de terminar la clase.
 
 Control de hilos con wait/notify. Productor/consumidor.
 
 1. Revise el funcionamiento del programa y ejecútelo. Mientras esto ocurren, ejecute jVisualVM y revise el consumo de CPU del proceso correspondiente. A qué se debe este consumo?, cual es la clase responsable?
-2. Haga los ajustes necesarios para que la solución use más eficientemente la CPU, teniendo en cuenta que -por ahora- la producción es lenta y el consumo es rápido. Verifique con JVisualVM que el consumo de CPU se reduzca.
-3. Haga que ahora el productor produzca muy rápido, y el consumidor consuma lento. Teniendo en cuenta que el productor conoce un límite de Stock (cuantos elementos debería tener, a lo sumo en la cola), haga que dicho límite se respete. Revise el API de la colección usada como cola para ver cómo garantizar que dicho límite no se supere. Verifique que, al poner un límite pequeño para el 'stock', no haya consumo alto de CPU ni errores.
 
+El consumo alto de CPU se debe a los bucles infinitos que están dentro de las clases **Consumer** y **Producer**; los cuales tienen ciclos "While(true)" los cuales no tienen condicionales que paren los hilos si llegan a los casos bordes, de esta forma se incrementa el consumo de CPU, agregando elementos sin pausas y eliminando elementos de la cola sin notificar a los demas hilos, incrementando mayormente la memoria del computador.
+<img width="1332" height="889" alt="image" src="https://github.com/user-attachments/assets/077c1776-7dd3-41b6-936a-4362691a1a17" />
+
+2. Haga los ajustes necesarios para que la solución use más eficientemente la CPU, teniendo en cuenta que -por ahora- la producción es lenta y el consumo es rápido. Verifique con JVisualVM que el consumo de CPU se reduzca.
+
+La forma inicial para reducir el consumo de la CPU, fue implementar en ambos el metodo try para que los hilos duerman (sleep) a 1 segundo, y mejorar el condicional inicial en **Consumer** para que, mientras no hayan datos en la cola, este hilo se quede esperando hasta que les notifiquen que ya hay datos nuevamente, todo esto en regiones criticas que fueron acopladas por synchronized().
+
+<img width="839" height="535" alt="image" src="https://github.com/user-attachments/assets/bec47b51-bc47-4b1d-b2fb-f8c684976e5e" />
+
+<img width="1332" height="830" alt="image" src="https://github.com/user-attachments/assets/3131738e-9e4c-42c3-87ef-42216df19f1d" />
+
+3. Haga que ahora el productor produzca muy rápido, y el consumidor consuma lento. Teniendo en cuenta que el productor conoce un límite de Stock (cuantos elementos debería tener, a lo sumo en la cola), haga que dicho límite se respete. Revise el API de la colección usada como cola para ver cómo garantizar que dicho límite no se supere. Verifique que, al poner un límite pequeño para el 'stock', no haya consumo alto de CPU ni errores.
+Ahora, para lograr que el productor genere mas que el consumidor, se implemento en ambos, que el tiempo que duerme el hilo de **Consumer** sea mayor (1.5 seg) al de **Producer** (1.0 seg); esto enviandole un parametro donde el usuario escoge cuanto desea que sea el maximo para la cola, en este caso siendo 1000. Por ultimo se respeta colocandole de forma parecida ciclo while() (pero con condicional el limite superior) del **Consumer**; donde el hilo esperaba a que le avisaran cuando se hayan eliminado elementos de la cola para seguir con el trabajo
+
+<img width="954" height="536" alt="image" src="https://github.com/user-attachments/assets/1535d433-afb6-4cdd-b623-375be168ce18" />
+
+<img width="1332" height="828" alt="image" src="https://github.com/user-attachments/assets/bd403e35-b735-40e4-8983-df858f4ceaad" />
 
 ##### Parte II. – Antes de terminar la clase.
 
@@ -36,11 +51,27 @@ Sincronización y Dead-Locks.
 
 2. Revise el código e identifique cómo se implemento la funcionalidad antes indicada. Dada la intención del juego, un invariante debería ser que la sumatoria de los puntos de vida de todos los jugadores siempre sea el mismo(claro está, en un instante de tiempo en el que no esté en proceso una operación de incremento/reducción de tiempo). Para este caso, para N jugadores, cual debería ser este valor?.
 
+Para N jugadores, sabiendo que "DEFAULT_IMMORTAL_HEALTH = 100" se puede considerar que esta invariante siempre debe ser: 
+	numOfImmortals = N * 100
+
 3. Ejecute la aplicación y verifique cómo funcionan las opción ‘pause and check’. Se cumple el invariante?.
+
+No, el invariante no cumple lo que se supone debe obtener como resultado estatico; esto por la condicion carrera, la cual hace que varien los datos de una forma aleatoria.
+
+<img width="788" height="291" alt="image" src="https://github.com/user-attachments/assets/46c19767-66cd-4161-8cff-26fa61d0eb3b" />
+<img width="788" height="298" alt="image" src="https://github.com/user-attachments/assets/af858d5f-747f-46ea-9915-a06a0e9392b0" />
+<img width="790" height="294" alt="image" src="https://github.com/user-attachments/assets/6058da32-4ffb-40b5-a73e-8677722c30b0" />
 
 4. Una primera hipótesis para que se presente la condición de carrera para dicha función (pause and check), es que el programa consulta la lista cuyos valores va a imprimir, a la vez que otros hilos modifican sus valores. Para corregir esto, haga lo que sea necesario para que efectivamente, antes de imprimir los resultados actuales, se pausen todos los demás hilos. Adicionalmente, implemente la opción ‘resume’.
 
+<img width="795" height="292" alt="image" src="https://github.com/user-attachments/assets/84b99b1c-6432-4f75-b321-8ff7711cc60a" />
+<img width="798" height="250" alt="image" src="https://github.com/user-attachments/assets/4255345f-6f2a-4078-b326-5b8e129574a8" />
+
+
 5. Verifique nuevamente el funcionamiento (haga clic muchas veces en el botón). Se cumple o no el invariante?.
+
+No, aun no cumple el invariante, porque existen los casos donde 2 hilos ataquen al mismo hilo al mismo tiempo, si esto pasa existe la posibilidad de que aun no funcione bien la invariante, es un caso de condicion de carrera que hay que acotar para que sirva el invariante.
+<img width="786" height="304" alt="image" src="https://github.com/user-attachments/assets/0ad87238-8c84-42b0-be92-7cf769d793f2" />
 
 6. Identifique posibles regiones críticas en lo que respecta a la pelea de los inmortales. Implemente una estrategia de bloqueo que evite las condiciones de carrera. Recuerde que si usted requiere usar dos o más ‘locks’ simultáneamente, puede usar bloques sincronizados anidados:
 
@@ -52,9 +83,18 @@ Sincronización y Dead-Locks.
 	}
 	```
 
+<img width="952" height="293" alt="image" src="https://github.com/user-attachments/assets/95067ff6-3cd6-4ae5-9fe5-8863d67ce6d5" />
+
 7. Tras implementar su estrategia, ponga a correr su programa, y ponga atención a si éste se llega a detener. Si es así, use los programas jps y jstack para identificar por qué el programa se detuvo.
 
+El programa se detiene porque se genera deadlock, al no tener un orden de como se bloquean los hilos, estos pueden bloquear 2 diferentes al mismo tiempo que, despues serán necesarios para continuar y estaran bloqueados.
+
 8. Plantee una estrategia para corregir el problema antes identificado (puede revisar de nuevo las páginas 206 y 207 de _Java Concurrency in Practice_).
+
+La estrategia es utilizar el nombre de los hilos (que son numeros) y organizar el bloqueo de tal forma que siempre se bloquee primero el menor, de esta forma no se podrá generar deadlock.
+
+<img width="1028" height="476" alt="image" src="https://github.com/user-attachments/assets/f560409d-ac0b-4cc3-b923-3f49a468c991" />
+<img width="1165" height="651" alt="image" src="https://github.com/user-attachments/assets/4b1e542f-6272-4c48-bc99-b3168b67ed90" />
 
 9. Una vez corregido el problema, rectifique que el programa siga funcionando de manera consistente cuando se ejecutan 100, 1000 o 10000 inmortales. Si en estos casos grandes se empieza a incumplir de nuevo el invariante, debe analizar lo realizado en el paso 4.
 
