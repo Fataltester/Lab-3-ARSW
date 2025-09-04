@@ -36,6 +36,16 @@ Teniendo en cuenta los conceptos vistos de condición de carrera y sincronizaci�
 - La búsqueda distribuida se detenga (deje de buscar en las listas negras restantes) y retorne la respuesta apenas, en su conjunto, los hilos hayan detectado el número de ocurrencias requerido que determina si un host es confiable o no (_BLACK_LIST_ALARM_COUNT_).
 - Lo anterior, garantizando que no se den condiciones de carrera.
 
+Para desarrollar esta solución:
+* Utilizamos una lista sincronizada para todos los hilos, esto para asegurar que al ir encontrando las IPs maliciosas, estas se almacenen en un mismo objeto. Este objeto se utilizo como lock de sincronización dentro del método "run".
+
+<img width="699" height="572" alt="image" src="https://github.com/user-attachments/assets/7b7e34e0-65ed-4de4-892f-c18e2d5b2596" />
+
+* Utilizamos el mismo "BLACK_LIST_ALARM_COUNT" dentro de la clase Thread para realizar la verificación y así detener el programa por medio del método "enoughOcurrences".
+Asegurando que la solución esta correctamente implementada, podemos evidenciar que el tiempo de ejecución en comparación con la primera versión es considerablemente menor
+
+<img width="840" height="396" alt="image" src="https://github.com/user-attachments/assets/da26d655-cf83-47a5-986b-17afcada5abc" />
+
 ##### Parte III. – Avance para el martes, antes de clase.
 
 Sincronización y Dead-Locks.
