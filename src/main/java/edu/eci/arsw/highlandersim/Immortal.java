@@ -20,6 +20,10 @@ public class Immortal extends Thread {
     private volatile boolean paused = false;
     
     private final Object pauseLock = new Object();
+    
+    private volatile boolean alive = true;
+    
+    private volatile boolean running = true;
 
     public Immortal(String name, List<Immortal> immortalsPopulation, int health, int defaultDamageValue, ImmortalUpdateReportCallback ucb) {
         super(name);
@@ -31,7 +35,7 @@ public class Immortal extends Thread {
     }
 
     public void run() {
-        while (true) {
+        while (running) {
                 synchronized (pauseLock) {
                     while (paused) {
                         try {
@@ -41,21 +45,31 @@ public class Immortal extends Thread {
                         }
                     }
                 }
+            if (!running)break;
+            if (immortalsPopulation.size() > 1) {
+                int myIndex = immortalsPopulation.indexOf(this);
 
-            Immortal im;
+                Immortal opponent = null;
+                do {
+                    int nextFighterIndex = r.nextInt(immortalsPopulation.size());
+                    if (nextFighterIndex != myIndex) {
+                        Immortal candidate = immortalsPopulation.get(nextFighterIndex);
+                        if (candidate.Alive()) {
+                            opponent = candidate;
+                        }
+                    }
+                } while (opponent == null && immortalsPopulation.size() > 1);
 
-            int myIndex = immortalsPopulation.indexOf(this);
+                if (opponent != null) {
+                    this.fight(opponent);
+                }
 
-            int nextFighterIndex = r.nextInt(immortalsPopulation.size());
-
-            //avoid self-fight
-            if (nextFighterIndex == myIndex) {
-                nextFighterIndex = ((nextFighterIndex + 1) % immortalsPopulation.size());
+            } else if(immortalsPopulation.size() == 1 && this.Alive()){
+                updateCallback.processReport(this + " is the only one alive.\n");
+                break;
+            } else{
+                break;
             }
-
-            im = immortalsPopulation.get(nextFighterIndex);
-
-            this.fight(im);
 
             try {
                 Thread.sleep(1);
@@ -70,20 +84,32 @@ public class Immortal extends Thread {
     public void fight(Immortal i2) {
         Immortal first = this;
         Immortal second = i2;
-        // Asegurar orden consistente de bloqueo
+        
         if (first.getName().compareTo(second.getName()) > 0) {
             first = i2;
             second = this;
         }
-        synchronized(first) {
+        synchronized (first) {
             synchronized (second) {
-                if (i2.getHealth() > 0) {
+                if (!this.alive || !i2.alive) {
+                    
+                    if (!i2.alive && immortalsPopulation.contains(i2)) {
+                        immortalsPopulation.remove(i2);
+                        updateCallback.processReport(this + " says: " + i2 + " was already dead and removed!\n");
+                    }
+                    return;
+                }
+
                 int damage = Math.min(defaultDamageValue, i2.getHealth());
                 i2.changeHealth(i2.getHealth() - damage);
-                this.changeHealth(getHealth() + damage);
-                    updateCallback.processReport("Fight: " + this + " vs " + i2+"\n");
+                this.changeHealth(this.getHealth() + damage);
+
+                if (i2.getHealth() <= 0) {
+                    i2.alive = false;
+                    immortalsPopulation.remove(i2);
+                    updateCallback.processReport(i2 + " is dead and has been eliminated.\n");
                 } else {
-                    updateCallback.processReport(this + " says:" + i2 + " is already dead!\n");
+                    updateCallback.processReport("Fight: " + this + " vs " + i2 + "\n");
                 }
             }
         }
@@ -114,6 +140,9 @@ public class Immortal extends Thread {
     public String toString() {
 
         return name + "[" + health + "]";
+    }
+    public boolean Alive() {
+        return alive && health > 0;
     }
 
 }
