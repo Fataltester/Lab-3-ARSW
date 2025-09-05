@@ -108,11 +108,45 @@ La estrategia es utilizar el nombre de los hilos (que son numeros) y organizar e
 
 9. Una vez corregido el problema, rectifique que el programa siga funcionando de manera consistente cuando se ejecutan 100, 1000 o 10000 inmortales. Si en estos casos grandes se empieza a incumplir de nuevo el invariante, debe analizar lo realizado en el paso 4.
 
+Caso de 100:
+
+<img width="631" height="553" alt="image" src="https://github.com/user-attachments/assets/3421dbb4-1c64-40a5-b2bb-a1274d7495c4" />
+
+Caso de 1000:
+
+<img width="914" height="668" alt="image" src="https://github.com/user-attachments/assets/07d960e1-abc8-4d2b-8ce5-0583d148488d" />
+
+Caso de 10000:
+
+<img width="630" height="730" alt="image" src="https://github.com/user-attachments/assets/13906229-31b3-4303-b6d7-3705348db06c" />
+
+Podemos evidenciar que el invariante se sigue cumpliendo
+
 10. Un elemento molesto para la simulación es que en cierto punto de la misma hay pocos 'inmortales' vivos realizando peleas fallidas con 'inmortales' ya muertos. Es necesario ir suprimiendo los inmortales muertos de la simulación a medida que van muriendo. Para esto:
 	* Analizando el esquema de funcionamiento de la simulación, esto podría crear una condición de carrera? Implemente la funcionalidad, ejecute la simulación y observe qué problema se presenta cuando hay muchos 'inmortales' en la misma. Escriba sus conclusiones al respecto en el archivo RESPUESTAS.txt.
-	* Corrija el problema anterior __SIN hacer uso de sincronización__, pues volver secuencial el acceso a la lista compartida de inmortales haría extremadamente lenta la simulación.
+
+Se puede crear una condición de carrera sobre la lista de inmortales, si un hilo elimina a un inmortal muerto mientras otro hilo busca de manera aleatoria dentro de la lista de inmortales se pueden producir inconsistencias.
+
+Podemos ver que se generan inconsistencias de este tipo
+
+<img width="498" height="162" alt="image" src="https://github.com/user-attachments/assets/ebefad79-16f2-4d04-9f8d-29bc0d539006" />
+
+Por lo que la eliminación de inmortales muertos de la lista compartida genera condiciones de carrera, por lo que inmortales terminan peleando con inmortales muertos o tomando indices que no existen, resultando con una simulación inconsistente.
+
+* Corrija el problema anterior __SIN hacer uso de sincronización__, pues volver secuencial el acceso a la lista compartida de inmortales haría extremadamente lenta la simulación.
+
+ Para lograr la implementación necesitamos que se verifiquen que los hilos ya eliminados no esten dentro de la lista y que además evitemos el caso donde algún hilo alcance a consultar ese hilo eliminado antes de ser realmente eliminado, por lo que realizamos la siguiente implementación:
+
+<img width="737" height="763" alt="image" src="https://github.com/user-attachments/assets/81496f88-ca9b-4f3b-bbd4-64d9bf1edada" />
+
+<img width="891" height="598" alt="image" src="https://github.com/user-attachments/assets/323685bf-8d7f-41b1-b32d-cfdff07b4577" />
+
+donde hacemos verificaciones constantes de si los hilos siguen vivos y así poder tomar acciones.
 
 11. Para finalizar, implemente la opción STOP.
+
+<img width="460" height="252" alt="image" src="https://github.com/user-attachments/assets/01d65b04-7618-4504-b511-845d0269d75c" />
+
 
 <!--
 ### Criterios de evaluación
